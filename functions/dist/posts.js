@@ -11,8 +11,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const message_1 = require("./message");
 const database_1 = require("firebase-admin/database");
+const storage_1 = require("firebase-admin/storage");
 const uuid_1 = require("uuid");
 const db = (0, database_1.getDatabase)();
+const storage = (0, storage_1.getStorage)();
 var ImageType;
 (function (ImageType) {
     ImageType[ImageType["Photograph"] = 0] = "Photograph";
@@ -36,7 +38,12 @@ function createPost(postDetails, userId) {
 }
 // upload associated image
 function uploadPostImage(postId, imageData, userId, imageType) {
-    // do something
+    return __awaiter(this, void 0, void 0, function* () {
+        const bucket = storage.bucket('images');
+        const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
+        const file = bucket.file(name);
+        yield file.save(imageData, { public: true });
+    });
 }
 // report content
 function reportPost(postId, userId) {

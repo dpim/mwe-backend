@@ -1,8 +1,9 @@
 import { sendSms } from './message';
 import { getDatabase } from 'firebase-admin/database';
+import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { firestore } from 'firebase-admin';
 const db = getDatabase();
+const storage = getStorage();
 
 type PostInput = {
     title: string,
@@ -48,8 +49,11 @@ function createPost(postDetails: PostInput, userId: string) {
 }
 
 // upload associated image
-function uploadPostImage(postId: string, imageData: Blob, userId: string, imageType: ImageType){
-    // do something
+async function uploadPostImage(postId: string, imageData: Buffer, userId: string, imageType: ImageType){
+    const bucket = storage.bucket('images');
+    const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
+    const file = bucket.file(name);
+    await file.save(imageData, { public: true});
 }
 
 // report content
