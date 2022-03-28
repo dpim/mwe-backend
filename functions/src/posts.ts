@@ -83,13 +83,8 @@ async function getPosts(){
 }
 
 // get info about a specific post
-async function getPostDetails(postId: string){
+function getPostDetails(postId: string){
     const posts = db.ref(`posts/${postId}`);
-    const postResult = await posts.once('value');
-    if (postResult){
-        return postResult
-    } else {
-        return null
-    }
+    return posts.once('value');
 }
 

@@ -73,14 +73,6 @@ function getPosts() {
 }
 // get info about a specific post
 function getPostDetails(postId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const posts = db.ref(`posts/${postId}`);
-        const postResult = yield posts.once('value');
-        if (postResult) {
-            return postResult;
-        }
-        else {
-            return null;
-        }
-    });
+    const posts = db.ref(`posts/${postId}`);
+    return posts.once('value');
 }
