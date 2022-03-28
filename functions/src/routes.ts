@@ -1,9 +1,17 @@
 import * as functions from 'firebase-functions'
+import multer from 'multer';
 import { Request, Response } from 'express'
 import express from 'express';
 import cors from 'cors';
 import { createUser, getUser } from './users';
-import { getPostDetails, getPosts, likePost, reportPost } from './posts';
+import { PostInput, getPostDetails, getPosts, likePost, reportPost, createPost, uploadPostImage, ImageType } from './posts';
+
+const multerMiddleware = multer({
+   storage: multer.memoryStorage(),
+   limits: {
+     fileSize: 5 * 1024 * 1024 // no larger than 5mb, you can change as needed.
+   }
+ });
 
 const app = express();
 app.use(cors({ origin: true }));
@@ -42,15 +50,42 @@ app.get('/posts/:id', async (request: Request<{id: string}>, response: Response)
 });
 
 app.post('/posts', async (request: Request, response: Response) => {
-   // TBD
+   const body = request.body;
+   const userId = request.body.userId;
+   const postDetails: PostInput = {
+      title: body.title,
+      caption: body.caption,
+      latitude: body.latitude,
+      longitude: body.longitude
+   };
+   const post = await createPost(postDetails, userId)
+   response.send(post)
 });
 
-app.post('/posts/:id/photo', async (request: Request<{id: string}>, response: Response) => {
-   // TBD
+app.post('/posts/:id/photo', multerMiddleware.single('file'), async (request: Request<{id: string}>, response: Response) => {
+   const image = request.file?.buffer;
+   const postId = request.params.id;
+   const userId = request.body.userId;
+   const type = ImageType.Photograph;
+   if (image){
+      await uploadPostImage(postId, image, userId, type);
+      response.sendStatus(201);
+   } else {
+      response.sendStatus(400);
+   }
 });
 
-app.post('/posts/:id/picture', async (request: Request<{id: string}>, response: Response) => {
-   // TBD
+app.post('/posts/:id/picture', multerMiddleware.single('file'), async (request: Request<{id: string}>, response: Response) => {
+   const image = request.file?.buffer;
+   const postId = request.params.id;
+   const userId = request.body.userId;
+   const type = ImageType.Painting;
+   if (image){
+      await uploadPostImage(postId, image, userId, type)
+      response.sendStatus(201);
+   } else {
+      response.sendStatus(400);
+   }
 });
 
 app.post('/posts/:id/like', async (request: Request<{id: string}>, response: Response) => {

@@ -5,14 +5,14 @@ import { v4 as uuidv4 } from 'uuid';
 const db = getDatabase();
 const storage = getStorage();
 
-type PostInput = {
+export type PostInput = {
     title: string,
     caption?: string,
     latitude: number,
     longitude: number
 }
 
-type Post = {
+export type Post = {
     title: string,
     caption?: string,
     latitude: number,
@@ -26,7 +26,7 @@ type Post = {
     paintingUrl?: string,
 }
 
-enum ImageType {
+export enum ImageType {
     Photograph,
     Painting
 }
@@ -35,7 +35,7 @@ enum ImageType {
 export function createPost(postDetails: PostInput, userId: string) {
     const postId = uuidv4();
     const postRef = db.ref(`posts/${postId}`);
-    postRef.set({
+    return postRef.set({
         id: postId,
         title: postDetails.title,
         caption: postDetails.caption,
@@ -45,7 +45,7 @@ export function createPost(postDetails: PostInput, userId: string) {
         createdBy: userId,
         createdDate: Date.now(),
         lastUpdatedDate: Date.now()
-    });
+    })
 }
 
 // upload associated image

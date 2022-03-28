@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPostDetails = exports.getPosts = exports.likePost = exports.reportPost = exports.uploadPostImage = exports.createPost = void 0;
+exports.getPostDetails = exports.getPosts = exports.likePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
 const message_1 = require("./message");
 const database_1 = require("firebase-admin/database");
 const storage_1 = require("firebase-admin/storage");
@@ -11,12 +11,12 @@ var ImageType;
 (function (ImageType) {
     ImageType[ImageType["Photograph"] = 0] = "Photograph";
     ImageType[ImageType["Painting"] = 1] = "Painting";
-})(ImageType || (ImageType = {}));
+})(ImageType = exports.ImageType || (exports.ImageType = {}));
 // create post details
 function createPost(postDetails, userId) {
     const postId = (0, uuid_1.v4)();
     const postRef = db.ref(`posts/${postId}`);
-    postRef.set({
+    return postRef.set({
         id: postId,
         title: postDetails.title,
         caption: postDetails.caption,
