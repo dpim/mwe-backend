@@ -1,14 +1,6 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getPostDetails = exports.getPosts = exports.likePost = exports.reportPost = exports.uploadPostImage = exports.createPost = void 0;
 const message_1 = require("./message");
 const database_1 = require("firebase-admin/database");
 const storage_1 = require("firebase-admin/storage");
@@ -36,43 +28,43 @@ function createPost(postDetails, userId) {
         lastUpdatedDate: Date.now()
     });
 }
+exports.createPost = createPost;
 // upload associated image
 function uploadPostImage(postId, imageData, userId, imageType) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const bucket = storage.bucket('images');
-        const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
-        const file = bucket.file(name);
-        yield file.save(imageData, { public: true });
-    });
+    const bucket = storage.bucket('images');
+    const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
+    const file = bucket.file(name);
+    return file.save(imageData, { public: true });
 }
+exports.uploadPostImage = uploadPostImage;
 // report content
 function reportPost(postId, userId) {
     const blockedPosts = db.ref(`users/${userId}/blockedPosts`);
-    blockedPosts.push(postId);
-    (0, message_1.sendSms)(postId);
+    return Promise.all([
+        blockedPosts.push(postId),
+        (0, message_1.sendSms)(postId)
+    ]);
 }
+exports.reportPost = reportPost;
 // like post
 function likePost(postId, userId) {
     const likedPosts = db.ref(`users/${userId}/likedPosts`);
     const postLikes = db.ref(`posts/${postId}/likedBy`);
-    likedPosts.push(postId);
-    postLikes.push(userId);
+    return Promise.all([
+        likedPosts.push(postId),
+        postLikes.push(userId)
+    ]);
 }
+exports.likePost = likePost;
 // get all posts
 function getPosts() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const posts = db.ref(`posts`);
-        const postResult = yield posts.once('value');
-        if (postResult) {
-            return postResult;
-        }
-        else {
-            return [];
-        }
-    });
+    const posts = db.ref(`posts`);
+    return posts.once('value');
 }
+exports.getPosts = getPosts;
 // get info about a specific post
 function getPostDetails(postId) {
     const posts = db.ref(`posts/${postId}`);
     return posts.once('value');
 }
+exports.getPostDetails = getPostDetails;
