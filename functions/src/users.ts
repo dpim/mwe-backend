@@ -1,13 +1,16 @@
-import { getDatabase } from 'firebase-admin/database';
-import { getStorage } from 'firebase-admin/storage';
+import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
-const db = getDatabase();
+import { firebaseConfig } from './utils';
+
+admin.initializeApp(firebaseConfig);
+const db = getFirestore();
 
 // create post details
-export function createUser(userDisplayName: string, userId: string) {
-    const postRef = db.ref(`users/${userId}`);
+export function createUser(userDisplayName: string, userId: string): Promise<any>{
+    const postRef = db.collection('users').doc(userId);
     const internalId = uuidv4()
-    postRef.set({
+    return postRef.set({
         internalId,
         userId,
         displayName: userDisplayName,
@@ -19,7 +22,6 @@ export function createUser(userDisplayName: string, userId: string) {
 }
 
 // create post details
-export function getUser(userId: string) {
-    const users = db.ref(`users/${userId}`);
-    return users.once('value');
+export function getUser(userId: string): Promise<any> {
+    return db.collection('users').doc(userId).get();
 }

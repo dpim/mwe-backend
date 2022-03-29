@@ -1,11 +1,36 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPostDetails = exports.getPosts = exports.likePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
-const message_1 = require("./message");
-const database_1 = require("firebase-admin/database");
+const admin = __importStar(require("firebase-admin"));
+const firestore_1 = require("firebase-admin/firestore");
 const storage_1 = require("firebase-admin/storage");
 const uuid_1 = require("uuid");
-const db = (0, database_1.getDatabase)();
+const utils_1 = require("./utils");
+admin.initializeApp(utils_1.firebaseConfig);
+const db = (0, firestore_1.getFirestore)();
 const storage = (0, storage_1.getStorage)();
 var ImageType;
 (function (ImageType) {
@@ -15,7 +40,7 @@ var ImageType;
 // create post details
 function createPost(postDetails, userId) {
     const postId = (0, uuid_1.v4)();
-    const postRef = db.ref(`posts/${postId}`);
+    const postRef = db.collection('posts').doc(postId);
     return postRef.set({
         id: postId,
         title: postDetails.title,
@@ -39,32 +64,30 @@ function uploadPostImage(postId, imageData, userId, imageType) {
 exports.uploadPostImage = uploadPostImage;
 // report content
 function reportPost(postId, userId) {
-    const blockedPosts = db.ref(`users/${userId}/blockedPosts`);
+    const userRef = db.collection('users').doc(userId);
     return Promise.all([
-        blockedPosts.push(postId),
-        (0, message_1.sendSms)(postId)
+        userRef.update({ blockedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
+        (0, utils_1.sendSms)(postId)
     ]);
 }
 exports.reportPost = reportPost;
 // like post
 function likePost(postId, userId) {
-    const likedPosts = db.ref(`users/${userId}/likedPosts`);
-    const postLikes = db.ref(`posts/${postId}/likedBy`);
+    const userRef = db.collection('users').doc(userId);
+    const postRef = db.collection('posts').doc(postId);
     return Promise.all([
-        likedPosts.push(postId),
-        postLikes.push(userId)
+        userRef.update({ likedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
+        postRef.update({ postLikes: firestore_1.FieldValue.arrayUnion(postId) }),
     ]);
 }
 exports.likePost = likePost;
 // get all posts
 function getPosts() {
-    const posts = db.ref(`posts`);
-    return posts.once('value');
+    return db.collection('posts').get();
 }
 exports.getPosts = getPosts;
 // get info about a specific post
 function getPostDetails(postId) {
-    const posts = db.ref(`posts/${postId}`);
-    return posts.once('value');
+    return db.collection('posts').doc(postId).get();
 }
 exports.getPostDetails = getPostDetails;
