@@ -1,9 +1,8 @@
-import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
-import { firebaseConfig } from './utils';
+import { startFirebaseApp } from './utils';
 
-admin.initializeApp(firebaseConfig);
+startFirebaseApp();
 const db = getFirestore();
 
 // create post details

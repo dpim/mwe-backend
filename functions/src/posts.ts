@@ -1,10 +1,9 @@
-import * as admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { firebaseConfig, sendSms } from './utils';
+import { startFirebaseApp, sendSms } from './utils';
 
-admin.initializeApp(firebaseConfig);
+startFirebaseApp();
 const db = getFirestore();
 const storage = getStorage();
 
