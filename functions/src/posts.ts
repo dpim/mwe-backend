@@ -78,12 +78,19 @@ export function likePost(postId: string, userId: string): Promise<any> {
 }
 
 // get all posts
-export function getPosts(): Promise<any> {
-    return db.collection('posts').get();
+export async function getPosts(): Promise<any> {
+    const posts = await db.collection('posts').get();
+    const result: any[] = [];
+    if (!posts.empty) {
+        posts.forEach(post => {
+            result.push(post.data());
+        });
+    }
+    return result;
 }
 
 // get info about a specific post
-export function getPostDetails(postId: string): Promise<any> {
+export async function getPostDetails(postId: string): Promise<any> {
     return db.collection('posts').doc(postId).get();
 }
 
