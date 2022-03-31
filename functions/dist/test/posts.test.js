@@ -38,22 +38,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("mocha");
 const sinon = __importStar(require("sinon"));
 const assert = __importStar(require("assert"));
-const post = __importStar(require("../posts"));
-const utils_1 = require("./utils");
+const fs = __importStar(require("fs"));
 const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const firebase_functions_test_1 = __importDefault(require("firebase-functions-test"));
+const post = __importStar(require("../posts"));
+const user = __importStar(require("../users"));
+const utils_1 = require("./utils");
 const test = (0, firebase_functions_test_1.default)({
     projectId: utils_1.projectId
 });
 const mockPostData = {
-    title: "test post",
+    title: 'test post',
     latitude: 123.456,
     longitude: -78.9
 };
-const mockUserId = "user_123";
-const secondMockUserId = "user_456";
+const mockUserId = 'user_123';
+const secondMockUserId = 'user_456';
+const mockImageFixturePath1 = 'src/test/fixtures/emoji1.png';
+const mockImageFixturePath2 = 'src/test/fixtures/emoji2.png';
 before(() => {
-    sinon.stub(firebase_admin_1.default, 'initializeApp');
+    // wrap exactly once
+    const wrappedMethod = firebase_admin_1.default.initializeApp;
+    if (wrappedMethod && !wrappedMethod.restore) {
+        sinon.stub(firebase_admin_1.default, 'initializeApp');
+    }
 });
 after(() => test.cleanup());
 describe("empty state", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -67,6 +75,8 @@ describe("empty state", () => __awaiter(void 0, void 0, void 0, function* () {
     }));
 }));
 describe("post creation", () => __awaiter(void 0, void 0, void 0, function* () {
+    // create initial user
+    yield user.createUser("test", mockUserId);
     it("should create new post", () => __awaiter(void 0, void 0, void 0, function* () {
         const postId = yield post.createPost(mockPostData, mockUserId);
         assert.notEqual(postId, null);
@@ -87,6 +97,7 @@ describe("post creation", () => __awaiter(void 0, void 0, void 0, function* () {
 }));
 describe("post actions", () => __awaiter(void 0, void 0, void 0, function* () {
     it("should be able to like post", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield user.createUser("test@test.com", secondMockUserId);
         const postId = yield post.createPost(mockPostData, mockUserId);
         const likeResult = yield post.likePost(postId, secondMockUserId);
         assert.equal(likeResult, true);
@@ -95,11 +106,19 @@ describe("post actions", () => __awaiter(void 0, void 0, void 0, function* () {
         assert.deepEqual(fetchedResult.likedBy, [mockUserId, secondMockUserId]);
     }));
 }));
-// describe("photo upload creation", async () => {
-//     it("should be able to upload photograph", async () => {
-//     });
-//     it("should be able to upload picture", async () => {
-//     });
-//     it("should see post in post list", async () => {
-//     });
-// });
+describe("photo upload creation", () => __awaiter(void 0, void 0, void 0, function* () {
+    it("should be able to upload images", () => __awaiter(void 0, void 0, void 0, function* () {
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        const paintingImage = yield fs.promises.readFile(mockImageFixturePath1);
+        const photoImage = yield fs.promises.readFile(mockImageFixturePath2);
+        const paintingImageBuffer = Buffer.from(paintingImage);
+        const photoImageBuffer = Buffer.from(photoImage);
+        const paintingResult = yield post.uploadPostImage(postId, paintingImageBuffer, mockUserId, post.ImageType.Painting);
+        const photoResult = yield post.uploadPostImage(postId, photoImageBuffer, mockUserId, post.ImageType.Photograph);
+        assert.equal(paintingResult, true);
+        assert.equal(photoResult, true);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.notEqual(fetchedResult.paintingUrl, null);
+        assert.notEqual(fetchedResult.photographUrl, null);
+    }));
+}));

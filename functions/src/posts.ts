@@ -37,26 +37,54 @@ export enum ImageType {
 export async function createPost(postDetails: PostInput, userId: string): Promise<string>{
     const postId = uuidv4();
     const postRef = db.collection('posts').doc(postId);
-    await postRef.set({
-        id: postId,
-        title: postDetails.title,
-        caption: postDetails.caption ? postDetails.caption : null,
-        latitude: postDetails.latitude,
-        longitude: postDetails.longitude,
-        likedBy: [ userId ],
-        createdBy: userId,
-        createdDate: Date.now(),
-        lastUpdatedDate: Date.now()
-    });
+    const userRef = db.collection('users').doc(userId);
+    try {
+        await db.runTransaction(async (t) => {
+            await t.set(postRef, {
+                id: postId,
+                title: postDetails.title,
+                caption: postDetails.caption ? postDetails.caption : null,
+                latitude: postDetails.latitude,
+                longitude: postDetails.longitude,
+                likedBy: [ userId ],
+                createdBy: userId,
+                createdDate: Date.now(),
+                lastUpdatedDate: Date.now()
+            });
+            await t.update(userRef, {
+                likedPosts: FieldValue.arrayUnion(postId),
+                createdPosts: FieldValue.arrayUnion(postId),
+                lastUpdatedDate: Date.now()
+            });
+        });
+    } catch {
+        // do nothing (yet) - log?
+    }
     return postId;
 }
 
 // upload associated image
 export async function uploadPostImage(postId: string, imageData: Buffer, userId: string, imageType: ImageType): Promise<any> {
+    const postRef = db.collection('posts').doc(postId);
     const bucket = storage.bucket('images');
     const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
     const file = bucket.file(name);
-    return file.save(imageData, { public: true});
+    // upload file, then update the url pointing to it
+    try {
+        await file.save(imageData, { public: true});
+        if (imageType === ImageType.Painting){
+            await postRef.update({
+                paintingUrl: file.metadata.mediaLink
+            });
+        } else if (imageType === ImageType.Photograph){
+            await postRef.update({
+                photographUrl: file.metadata.mediaLink
+            });
+        }
+    } catch {
+        // do nothing (yet) - log?
+    }
+    return true;
 }
 
 // report content
@@ -78,10 +106,10 @@ export async function likePost(postId: string, userId: string): Promise<boolean>
     const userRef = db.collection('users').doc(userId);
     const postRef = db.collection('posts').doc(postId);
     try {
-        await Promise.all([
-            postRef.update({ likedBy: FieldValue.arrayUnion(userId) }),
-            userRef.update({ likedPosts: FieldValue.arrayUnion(postId) }),
-        ]);
+        await db.runTransaction(async (t) => {
+            t.update(postRef, { likedBy: FieldValue.arrayUnion(userId) });
+            t.update(userRef, { likedPosts: FieldValue.arrayUnion(postId) });
+        });
     } catch {
         // do nothing (yet) - log?
     }

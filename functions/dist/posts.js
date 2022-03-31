@@ -27,17 +27,30 @@ function createPost(postDetails, userId) {
     return __awaiter(this, void 0, void 0, function* () {
         const postId = (0, uuid_1.v4)();
         const postRef = db.collection('posts').doc(postId);
-        yield postRef.set({
-            id: postId,
-            title: postDetails.title,
-            caption: postDetails.caption ? postDetails.caption : null,
-            latitude: postDetails.latitude,
-            longitude: postDetails.longitude,
-            likedBy: [userId],
-            createdBy: userId,
-            createdDate: Date.now(),
-            lastUpdatedDate: Date.now()
-        });
+        const userRef = db.collection('users').doc(userId);
+        try {
+            yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
+                yield t.set(postRef, {
+                    id: postId,
+                    title: postDetails.title,
+                    caption: postDetails.caption ? postDetails.caption : null,
+                    latitude: postDetails.latitude,
+                    longitude: postDetails.longitude,
+                    likedBy: [userId],
+                    createdBy: userId,
+                    createdDate: Date.now(),
+                    lastUpdatedDate: Date.now()
+                });
+                yield t.update(userRef, {
+                    likedPosts: firestore_1.FieldValue.arrayUnion(postId),
+                    createdPosts: firestore_1.FieldValue.arrayUnion(postId),
+                    lastUpdatedDate: Date.now()
+                });
+            }));
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
         return postId;
     });
 }
@@ -45,10 +58,28 @@ exports.createPost = createPost;
 // upload associated image
 function uploadPostImage(postId, imageData, userId, imageType) {
     return __awaiter(this, void 0, void 0, function* () {
+        const postRef = db.collection('posts').doc(postId);
         const bucket = storage.bucket('images');
         const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
         const file = bucket.file(name);
-        return file.save(imageData, { public: true });
+        // upload file, then update the url pointing to it
+        try {
+            yield file.save(imageData, { public: true });
+            if (imageType === ImageType.Painting) {
+                yield postRef.update({
+                    paintingUrl: file.metadata.mediaLink
+                });
+            }
+            else if (imageType === ImageType.Photograph) {
+                yield postRef.update({
+                    photographUrl: file.metadata.mediaLink
+                });
+            }
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
+        return true;
     });
 }
 exports.uploadPostImage = uploadPostImage;
@@ -75,10 +106,10 @@ function likePost(postId, userId) {
         const userRef = db.collection('users').doc(userId);
         const postRef = db.collection('posts').doc(postId);
         try {
-            yield Promise.all([
-                postRef.update({ likedBy: firestore_1.FieldValue.arrayUnion(userId) }),
-                userRef.update({ likedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
-            ]);
+            yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
+                t.update(postRef, { likedBy: firestore_1.FieldValue.arrayUnion(userId) });
+                t.update(userRef, { likedPosts: firestore_1.FieldValue.arrayUnion(postId) });
+            }));
         }
         catch (_a) {
             // do nothing (yet) - log?

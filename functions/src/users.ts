@@ -5,22 +5,29 @@ import { startFirebaseApp } from './utils';
 startFirebaseApp();
 const db = getFirestore();
 
-// create post details
-export function createUser(userDisplayName: string, userId: string): Promise<any>{
+// create user details
+export async function createUser(userDisplayName: string, userId: string): Promise<any>{
     const postRef = db.collection('users').doc(userId);
     const internalId = uuidv4()
-    return postRef.set({
+    await postRef.set({
         internalId,
         userId,
         displayName: userDisplayName,
         blockedPosts: [],
         likedPosts: [],
+        createdPosts: [],
         createdDate: Date.now(),
         lastUpdatedDate: Date.now()
     });
+    return userId;
 }
 
-// create post details
-export function getUser(userId: string): Promise<any> {
-    return db.collection('users').doc(userId).get();
+// fetch user details
+export async function getUser(userId: string): Promise<any> {
+    const user = await db.collection('users').doc(userId).get();
+    if (user && user.data()){
+        return user.data();
+    } else {
+        return null;
+    }
 }

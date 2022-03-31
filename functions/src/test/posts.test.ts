@@ -1,25 +1,33 @@
 import 'mocha';
 import * as sinon from 'sinon';
 import * as assert from 'assert';
-import * as post from '../posts';
-import { projectId } from './utils';
+import * as fs from 'fs';
 import admin from 'firebase-admin';
-import firebaseFunctionTest from "firebase-functions-test";
+import firebaseFunctionTest from 'firebase-functions-test';
+import * as post from '../posts';
+import * as user from '../users';
+import { projectId } from './utils';
 
 const test = firebaseFunctionTest({
     projectId
 });
 
 const mockPostData: post.PostInput = {
-    title: "test post",
+    title: 'test post',
     latitude: 123.456,
     longitude: -78.9
 }
-const mockUserId = "user_123";
-const secondMockUserId = "user_456";
+const mockUserId = 'user_123';
+const secondMockUserId = 'user_456';
+const mockImageFixturePath1 = 'src/test/fixtures/emoji1.png';
+const mockImageFixturePath2 = 'src/test/fixtures/emoji2.png';
 
 before(() => {
-    sinon.stub(admin, 'initializeApp');
+    // wrap exactly once
+    const wrappedMethod: any = admin.initializeApp;
+    if (wrappedMethod && !wrappedMethod.restore){
+        sinon.stub(admin, 'initializeApp');
+    }
 });
 
 after(() => test.cleanup());
@@ -37,6 +45,9 @@ describe("empty state", async () => {
 });
 
 describe("post creation", async () => {
+    // create initial user
+    await user.createUser("test", mockUserId);
+
     it("should create new post", async () => {
         const postId = await post.createPost(mockPostData, mockUserId);
         assert.notEqual(postId, null);
@@ -60,6 +71,7 @@ describe("post creation", async () => {
 
 describe("post actions", async () => {
     it("should be able to like post", async () => {
+        await user.createUser("test@test.com", secondMockUserId);
         const postId = await post.createPost(mockPostData, mockUserId);
         const likeResult = await post.likePost(postId, secondMockUserId);
         assert.equal(likeResult, true);
@@ -69,16 +81,19 @@ describe("post actions", async () => {
     });
 });
 
-// describe("photo upload creation", async () => {
-//     it("should be able to upload photograph", async () => {
-
-//     });
-
-//     it("should be able to upload picture", async () => {
-
-//     });
-
-//     it("should see post in post list", async () => {
-
-//     });
-// });
+describe("photo upload creation", async () => {
+    it("should be able to upload images", async () => {
+        const postId = await post.createPost(mockPostData, mockUserId);
+        const paintingImage = await fs.promises.readFile(mockImageFixturePath1);
+        const photoImage = await fs.promises.readFile(mockImageFixturePath2);
+        const paintingImageBuffer = Buffer.from(paintingImage);
+        const photoImageBuffer = Buffer.from(photoImage);
+        const paintingResult = await post.uploadPostImage(postId, paintingImageBuffer, mockUserId, post.ImageType.Painting);
+        const photoResult = await post.uploadPostImage(postId, photoImageBuffer, mockUserId, post.ImageType.Photograph);
+        assert.equal(paintingResult, true);
+        assert.equal(photoResult, true);
+        const fetchedResult = await post.getPostDetails(postId);
+        assert.notEqual(fetchedResult.paintingUrl, null);
+        assert.notEqual(fetchedResult.photographUrl, null);
+    });
+});
