@@ -36,9 +36,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require("mocha");
+const sinon = __importStar(require("sinon"));
 const assert = __importStar(require("assert"));
 const post = __importStar(require("../posts"));
 const utils_1 = require("./utils");
+const firebase_admin_1 = __importDefault(require("firebase-admin"));
 const firebase_functions_test_1 = __importDefault(require("firebase-functions-test"));
 const test = (0, firebase_functions_test_1.default)({
     projectId: utils_1.projectId
@@ -49,11 +51,15 @@ const mockPostData = {
     longitude: -78.9
 };
 const mockUserId = "user_123";
+const secondMockUserId = "user_456";
+before(() => {
+    sinon.stub(firebase_admin_1.default, 'initializeApp');
+});
 after(() => test.cleanup());
 describe("empty state", () => __awaiter(void 0, void 0, void 0, function* () {
     it("should fetch empty posts", () => __awaiter(void 0, void 0, void 0, function* () {
         const result = yield post.getPosts();
-        assert.equal(result, []);
+        assert.deepEqual(result, []);
     }));
     it("should fetch empty specific post", () => __awaiter(void 0, void 0, void 0, function* () {
         const result = yield post.getPostDetails("123");
@@ -62,16 +68,31 @@ describe("empty state", () => __awaiter(void 0, void 0, void 0, function* () {
 }));
 describe("post creation", () => __awaiter(void 0, void 0, void 0, function* () {
     it("should create new post", () => __awaiter(void 0, void 0, void 0, function* () {
-        const result = yield post.createPost(mockPostData, mockUserId);
-        assert.equal(result, null);
-    }));
-    it("should be able to fetch this post", () => __awaiter(void 0, void 0, void 0, function* () {
-        const result = yield post.getPostDetails("123");
-        assert.equal(result, null);
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        assert.notEqual(postId, null);
+        const result = yield post.getPostDetails(postId);
+        assert.equal(result.id, postId);
+        assert.equal(result.title, mockPostData.title);
+        assert.equal(result.createdBy, mockUserId);
+        assert.equal(result.caption, mockPostData.caption);
+        assert.equal(result.latitude, mockPostData.latitude);
+        assert.equal(result.longitude, mockPostData.longitude);
+        assert.deepEqual(result.likedBy, [mockUserId]);
     }));
     it("should see post in post list", () => __awaiter(void 0, void 0, void 0, function* () {
         const result = yield post.getPosts();
-        assert.equal(result, []);
+        assert.equal(result.length, 1);
+        assert.equal(result[0].title, mockPostData.title);
+    }));
+}));
+describe("post actions", () => __awaiter(void 0, void 0, void 0, function* () {
+    it("should be able to like post", () => __awaiter(void 0, void 0, void 0, function* () {
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        const likeResult = yield post.likePost(postId, secondMockUserId);
+        assert.equal(likeResult, true);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.equal(fetchedResult.likedBy.length, 2);
+        assert.deepEqual(fetchedResult.likedBy, [mockUserId, secondMockUserId]);
     }));
 }));
 // describe("photo upload creation", async () => {
@@ -80,9 +101,5 @@ describe("post creation", () => __awaiter(void 0, void 0, void 0, function* () {
 //     it("should be able to upload picture", async () => {
 //     });
 //     it("should see post in post list", async () => {
-//     });
-// });
-// describe("post actions", async () => {
-//     it("should be able to like post", async () => {
 //     });
 // });

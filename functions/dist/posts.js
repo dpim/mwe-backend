@@ -22,48 +22,69 @@ var ImageType;
     ImageType[ImageType["Photograph"] = 0] = "Photograph";
     ImageType[ImageType["Painting"] = 1] = "Painting";
 })(ImageType = exports.ImageType || (exports.ImageType = {}));
-// create post details
+// create post details - returns whether written
 function createPost(postDetails, userId) {
-    const postId = (0, uuid_1.v4)();
-    const postRef = db.collection('posts').doc(postId);
-    return postRef.set({
-        id: postId,
-        title: postDetails.title,
-        caption: postDetails.caption,
-        latitude: postDetails.latitude,
-        longitude: postDetails.longitude,
-        likedBy: [userId],
-        createdBy: userId,
-        createdDate: Date.now(),
-        lastUpdatedDate: Date.now()
+    return __awaiter(this, void 0, void 0, function* () {
+        const postId = (0, uuid_1.v4)();
+        const postRef = db.collection('posts').doc(postId);
+        yield postRef.set({
+            id: postId,
+            title: postDetails.title,
+            caption: postDetails.caption ? postDetails.caption : null,
+            latitude: postDetails.latitude,
+            longitude: postDetails.longitude,
+            likedBy: [userId],
+            createdBy: userId,
+            createdDate: Date.now(),
+            lastUpdatedDate: Date.now()
+        });
+        return postId;
     });
 }
 exports.createPost = createPost;
 // upload associated image
 function uploadPostImage(postId, imageData, userId, imageType) {
-    const bucket = storage.bucket('images');
-    const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
-    const file = bucket.file(name);
-    return file.save(imageData, { public: true });
+    return __awaiter(this, void 0, void 0, function* () {
+        const bucket = storage.bucket('images');
+        const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
+        const file = bucket.file(name);
+        return file.save(imageData, { public: true });
+    });
 }
 exports.uploadPostImage = uploadPostImage;
 // report content
 function reportPost(postId, userId) {
-    const userRef = db.collection('users').doc(userId);
-    return Promise.all([
-        userRef.update({ blockedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
-        (0, utils_1.sendSms)(postId)
-    ]);
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRef = db.collection('users').doc(userId);
+        try {
+            yield Promise.all([
+                userRef.update({ blockedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
+                (0, utils_1.sendSms)(postId)
+            ]);
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
+        return true;
+    });
 }
 exports.reportPost = reportPost;
 // like post
 function likePost(postId, userId) {
-    const userRef = db.collection('users').doc(userId);
-    const postRef = db.collection('posts').doc(postId);
-    return Promise.all([
-        userRef.update({ likedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
-        postRef.update({ postLikes: firestore_1.FieldValue.arrayUnion(postId) }),
-    ]);
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRef = db.collection('users').doc(userId);
+        const postRef = db.collection('posts').doc(postId);
+        try {
+            yield Promise.all([
+                postRef.update({ likedBy: firestore_1.FieldValue.arrayUnion(userId) }),
+                userRef.update({ likedPosts: firestore_1.FieldValue.arrayUnion(postId) }),
+            ]);
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
+        return true;
+    });
 }
 exports.likePost = likePost;
 // get all posts
@@ -83,7 +104,13 @@ exports.getPosts = getPosts;
 // get info about a specific post
 function getPostDetails(postId) {
     return __awaiter(this, void 0, void 0, function* () {
-        return db.collection('posts').doc(postId).get();
+        const post = yield db.collection('posts').doc(postId).get();
+        if (post && post.data()) {
+            return post.data();
+        }
+        else {
+            return null;
+        }
     });
 }
 exports.getPostDetails = getPostDetails;

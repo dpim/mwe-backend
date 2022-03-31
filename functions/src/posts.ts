@@ -33,25 +33,26 @@ export enum ImageType {
     Painting
 }
 
-// create post details
-export function createPost(postDetails: PostInput, userId: string): Promise<any>{
+// create post details - returns whether written
+export async function createPost(postDetails: PostInput, userId: string): Promise<string>{
     const postId = uuidv4();
     const postRef = db.collection('posts').doc(postId);
-    return postRef.set({
+    await postRef.set({
         id: postId,
         title: postDetails.title,
-        caption: postDetails.caption,
+        caption: postDetails.caption ? postDetails.caption : null,
         latitude: postDetails.latitude,
         longitude: postDetails.longitude,
         likedBy: [ userId ],
         createdBy: userId,
         createdDate: Date.now(),
         lastUpdatedDate: Date.now()
-    })
+    });
+    return postId;
 }
 
 // upload associated image
-export function uploadPostImage(postId: string, imageData: Buffer, userId: string, imageType: ImageType): Promise<any> {
+export async function uploadPostImage(postId: string, imageData: Buffer, userId: string, imageType: ImageType): Promise<any> {
     const bucket = storage.bucket('images');
     const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
     const file = bucket.file(name);
@@ -59,22 +60,32 @@ export function uploadPostImage(postId: string, imageData: Buffer, userId: strin
 }
 
 // report content
-export function reportPost(postId: string, userId: string): Promise<any> {
+export async function reportPost(postId: string, userId: string): Promise<boolean> {
     const userRef = db.collection('users').doc(userId);
-    return Promise.all([
-        userRef.update({ blockedPosts: FieldValue.arrayUnion(postId) }),
-        sendSms(postId)
-    ]);
+    try {
+        await Promise.all([
+            userRef.update({ blockedPosts: FieldValue.arrayUnion(postId) }),
+            sendSms(postId)
+        ]);
+    } catch {
+        // do nothing (yet) - log?
+    }
+    return true;
 }
 
 // like post
-export function likePost(postId: string, userId: string): Promise<any> {
+export async function likePost(postId: string, userId: string): Promise<boolean> {
     const userRef = db.collection('users').doc(userId);
     const postRef = db.collection('posts').doc(postId);
-    return Promise.all([
-        userRef.update({ likedPosts: FieldValue.arrayUnion(postId) }),
-        postRef.update({ postLikes: FieldValue.arrayUnion(postId) }),
-    ]);
+    try {
+        await Promise.all([
+            postRef.update({ likedBy: FieldValue.arrayUnion(userId) }),
+            userRef.update({ likedPosts: FieldValue.arrayUnion(postId) }),
+        ]);
+    } catch {
+        // do nothing (yet) - log?
+    }
+    return true;
 }
 
 // get all posts
@@ -91,6 +102,11 @@ export async function getPosts(): Promise<any> {
 
 // get info about a specific post
 export async function getPostDetails(postId: string): Promise<any> {
-    return db.collection('posts').doc(postId).get();
+    const post = await db.collection('posts').doc(postId).get();
+    if (post && post.data()){
+        return post.data();
+    } else {
+        return null;
+    }
 }
 

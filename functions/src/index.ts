@@ -58,8 +58,8 @@ app.post('/posts', async (request: Request, response: Response) => {
       latitude: body.latitude,
       longitude: body.longitude
    };
-   const post = await createPost(postDetails, userId)
-   response.send(post)
+   const postId = await createPost(postDetails, userId)
+   response.send({ postId });
 });
 
 app.post('/posts/:id/photo', multerMiddleware.single('file'), async (request: Request<{id: string}>, response: Response) => {

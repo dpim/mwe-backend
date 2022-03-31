@@ -86,8 +86,8 @@ app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, func
         latitude: body.latitude,
         longitude: body.longitude
     };
-    const post = yield (0, posts_1.createPost)(postDetails, userId);
-    response.send(post);
+    const postId = yield (0, posts_1.createPost)(postDetails, userId);
+    response.send({ postId });
 }));
 app.post('/posts/:id/photo', multerMiddleware.single('file'), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
