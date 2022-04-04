@@ -15,11 +15,8 @@ const multerMiddleware = multer({
 
 const app = express();
 app.use(cors({ origin: true }));
-
-// exports.helloWorld = functions.https.onRequest((request: Request, response: Response) => {
-//    functions.logger.info("Hello logs!", {structuredData: true});
-//    response.send("Hello from Firebase!");
-// });
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
 
 // account routes
 app.get('/users/:id', async (request: Request<{id: string}>, response: Response) => {
