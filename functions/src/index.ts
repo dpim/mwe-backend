@@ -11,39 +11,39 @@ const multerMiddleware = multer({
    limits: {
      fileSize: 5 * 1024 * 1024 // no larger than 5mb, you can change as needed.
    }
- });
+});
 
 const app = express();
+app.use(express.json());
 app.use(cors({ origin: true }));
 app.use(express.urlencoded({extended: true}));
-app.use(express.json());
 
 // account routes
 app.get('/users/:id', async (request: Request<{id: string}>, response: Response) => {
    const userId = request.params.id;
    const user = await getUser(userId);
-   response.send(user);
+   return response.send(user);
 });
 
 app.post('/users/:id', async (request: Request<{id: string}>, response: Response) => {
    const userId = request.params.id;
    const userDisplayName = request.body.displayName;
    if (!userDisplayName){
-      response.sendStatus(400);
+      return response.sendStatus(400);
    }
    const user = await createUser(userDisplayName, userId);
-   response.send(user);
+   return response.send(user);
 });
 
 // post routes
 app.get('/posts', async (request: Request, response: Response) => {
    const posts = await getPosts();
-   response.send(posts);
+   return response.send(posts);
 });
 
 app.get('/posts/:id', async (request: Request<{id: string}>, response: Response) => {
    const post = await getPostDetails(request.params.id);
-   response.send(post);
+   return response.send(post);
 });
 
 app.post('/posts', async (request: Request, response: Response) => {
@@ -56,7 +56,7 @@ app.post('/posts', async (request: Request, response: Response) => {
       longitude: body.longitude
    };
    const postId = await createPost(postDetails, userId)
-   response.send({ postId });
+   return response.send({ postId });
 });
 
 app.post('/posts/:id/photo', multerMiddleware.single('file'), async (request: Request<{id: string}>, response: Response) => {
@@ -66,9 +66,9 @@ app.post('/posts/:id/photo', multerMiddleware.single('file'), async (request: Re
    const type = ImageType.Photograph;
    if (image){
       await uploadPostImage(postId, image, userId, type);
-      response.sendStatus(201);
+      return response.sendStatus(201);
    } else {
-      response.sendStatus(400);
+      return response.sendStatus(400);
    }
 });
 
@@ -79,9 +79,9 @@ app.post('/posts/:id/picture', multerMiddleware.single('file'), async (request: 
    const type = ImageType.Painting;
    if (image){
       await uploadPostImage(postId, image, userId, type)
-      response.sendStatus(201);
+      return response.sendStatus(201);
    } else {
-      response.sendStatus(400);
+      return response.sendStatus(400);
    }
 });
 
@@ -89,14 +89,14 @@ app.post('/posts/:id/like', async (request: Request<{id: string}>, response: Res
    const userId = request.body.userId;
    const postId = request.params.id;
    await likePost(postId, userId);
-   response.sendStatus(201);
+   return response.sendStatus(201);
 });
 
 app.post('/posts/:id/report', async (request: Request<{id: string}>, response: Response) => {
    const userId = request.body.userId;
    const postId = request.params.id;
    await reportPost(postId, userId);
-   response.sendStatus(201);
+   return response.sendStatus(201);
 });
 
 exports.api = functions.https.onRequest(app);

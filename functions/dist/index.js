@@ -48,32 +48,32 @@ const multerMiddleware = (0, multer_1.default)({
     }
 });
 const app = (0, express_1.default)();
+app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: true }));
 app.use(express_1.default.urlencoded({ extended: true }));
-app.use(express_1.default.json());
 // account routes
 app.get('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.params.id;
     const user = yield (0, users_1.getUser)(userId);
-    response.send(user);
+    return response.send(user);
 }));
 app.post('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.params.id;
     const userDisplayName = request.body.displayName;
     if (!userDisplayName) {
-        response.sendStatus(400);
+        return response.sendStatus(400);
     }
     const user = yield (0, users_1.createUser)(userDisplayName, userId);
-    response.send(user);
+    return response.send(user);
 }));
 // post routes
 app.get('/posts', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const posts = yield (0, posts_1.getPosts)();
-    response.send(posts);
+    return response.send(posts);
 }));
 app.get('/posts/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const post = yield (0, posts_1.getPostDetails)(request.params.id);
-    response.send(post);
+    return response.send(post);
 }));
 app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const body = request.body;
@@ -85,7 +85,7 @@ app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, func
         longitude: body.longitude
     };
     const postId = yield (0, posts_1.createPost)(postDetails, userId);
-    response.send({ postId });
+    return response.send({ postId });
 }));
 app.post('/posts/:id/photo', multerMiddleware.single('file'), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -95,10 +95,10 @@ app.post('/posts/:id/photo', multerMiddleware.single('file'), (request, response
     const type = posts_1.ImageType.Photograph;
     if (image) {
         yield (0, posts_1.uploadPostImage)(postId, image, userId, type);
-        response.sendStatus(201);
+        return response.sendStatus(201);
     }
     else {
-        response.sendStatus(400);
+        return response.sendStatus(400);
     }
 }));
 app.post('/posts/:id/picture', multerMiddleware.single('file'), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
@@ -109,22 +109,22 @@ app.post('/posts/:id/picture', multerMiddleware.single('file'), (request, respon
     const type = posts_1.ImageType.Painting;
     if (image) {
         yield (0, posts_1.uploadPostImage)(postId, image, userId, type);
-        response.sendStatus(201);
+        return response.sendStatus(201);
     }
     else {
-        response.sendStatus(400);
+        return response.sendStatus(400);
     }
 }));
 app.post('/posts/:id/like', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.body.userId;
     const postId = request.params.id;
     yield (0, posts_1.likePost)(postId, userId);
-    response.sendStatus(201);
+    return response.sendStatus(201);
 }));
 app.post('/posts/:id/report', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.body.userId;
     const postId = request.params.id;
     yield (0, posts_1.reportPost)(postId, userId);
-    response.sendStatus(201);
+    return response.sendStatus(201);
 }));
 exports.api = functions.https.onRequest(app);
