@@ -36,17 +36,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions = __importStar(require("firebase-functions"));
-const multer_1 = __importDefault(require("multer"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const users_1 = require("./users");
 const posts_1 = require("./posts");
-const multerMiddleware = (0, multer_1.default)({
-    storage: multer_1.default.memoryStorage(),
-    limits: {
-        fileSize: 5 * 1024 * 1024 // no larger than 5mb, you can change as needed.
-    }
-});
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: true }));
@@ -76,43 +69,36 @@ app.get('/posts/:id', (request, response) => __awaiter(void 0, void 0, void 0, f
     return response.send(post);
 }));
 app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const body = request.body;
-    const userId = request.body.userId;
+    const userId = body.userId;
     const postDetails = {
         title: body.title,
-        caption: body.caption,
+        caption: (_a = body.caption) !== null && _a !== void 0 ? _a : null,
         latitude: body.latitude,
         longitude: body.longitude
     };
     const postId = yield (0, posts_1.createPost)(postDetails, userId);
     return response.send({ postId });
 }));
-app.post('/posts/:id/photo', multerMiddleware.single('file'), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const image = (_a = request.file) === null || _a === void 0 ? void 0 : _a.buffer;
+app.post('/posts/:id/upload/:type', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const postId = request.params.id;
-    const userId = request.body.userId;
-    const type = posts_1.ImageType.Photograph;
-    if (image) {
-        yield (0, posts_1.uploadPostImage)(postId, image, userId, type);
-        return response.sendStatus(201);
+    const typeString = request.params.type;
+    const type = (typeString === "picture") ? posts_1.ImageType.Painting : posts_1.ImageType.Photograph;
+    const imageString = request.body.image;
+    try {
+        if (imageString) {
+            const base64EncodedImageString = imageString.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64EncodedImageString, 'base64');
+            yield (0, posts_1.uploadPostImage)(postId, buffer, type);
+            return response.sendStatus(201);
+        }
+        else {
+            return response.sendStatus(400);
+        }
     }
-    else {
-        return response.sendStatus(400);
-    }
-}));
-app.post('/posts/:id/picture', multerMiddleware.single('file'), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b;
-    const image = (_b = request.file) === null || _b === void 0 ? void 0 : _b.buffer;
-    const postId = request.params.id;
-    const userId = request.body.userId;
-    const type = posts_1.ImageType.Painting;
-    if (image) {
-        yield (0, posts_1.uploadPostImage)(postId, image, userId, type);
-        return response.sendStatus(201);
-    }
-    else {
-        return response.sendStatus(400);
+    catch (_b) {
+        return response.sendStatus(500);
     }
 }));
 app.post('/posts/:id/like', (request, response) => __awaiter(void 0, void 0, void 0, function* () {

@@ -113,8 +113,8 @@ describe("photo upload creation", () => __awaiter(void 0, void 0, void 0, functi
         const photoImage = yield fs.promises.readFile(mockImageFixturePath2);
         const paintingImageBuffer = Buffer.from(paintingImage);
         const photoImageBuffer = Buffer.from(photoImage);
-        const paintingResult = yield post.uploadPostImage(postId, paintingImageBuffer, mockUserId, post.ImageType.Painting);
-        const photoResult = yield post.uploadPostImage(postId, photoImageBuffer, mockUserId, post.ImageType.Photograph);
+        const paintingResult = yield post.uploadPostImage(postId, paintingImageBuffer, post.ImageType.Painting);
+        const photoResult = yield post.uploadPostImage(postId, photoImageBuffer, post.ImageType.Photograph);
         assert.equal(paintingResult, true);
         assert.equal(photoResult, true);
         const fetchedResult = yield post.getPostDetails(postId);

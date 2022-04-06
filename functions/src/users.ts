@@ -6,7 +6,7 @@ startFirebaseApp();
 const db = getFirestore();
 
 // create user details
-export async function createUser(userDisplayName: string, userId: string): Promise<any>{
+export async function createUser(userDisplayName: string, userId: string): Promise<any> {
     const postRef = db.collection('users').doc(userId);
     const internalId = uuidv4()
     await postRef.set({
@@ -25,7 +25,7 @@ export async function createUser(userDisplayName: string, userId: string): Promi
 // fetch user details
 export async function getUser(userId: string): Promise<any> {
     const user = await db.collection('users').doc(userId).get();
-    if (user && user.data()){
+    if (user && user.data()) {
         return user.data();
     } else {
         return null;

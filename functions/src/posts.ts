@@ -1,7 +1,8 @@
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { startFirebaseApp, sendSms } from './utils';
+import stream from 'stream';
+import { startFirebaseApp, sendSms, storageBucket } from './utils';
 
 startFirebaseApp();
 const db = getFirestore();
@@ -19,7 +20,7 @@ export type Post = {
     caption?: string,
     latitude: number,
     longitude: number,
-    likedBy: [ string ],
+    likedBy: [string],
     createdBy: string,
     createdDate: Date,
     lastUpdatedDate: Date,
@@ -34,7 +35,7 @@ export enum ImageType {
 }
 
 // create post details - returns whether written
-export async function createPost(postDetails: PostInput, userId: string): Promise<string>{
+export async function createPost(postDetails: PostInput, userId: string): Promise<string> {
     const postId = uuidv4();
     const postRef = db.collection('posts').doc(postId);
     const userRef = db.collection('users').doc(userId);
@@ -43,10 +44,10 @@ export async function createPost(postDetails: PostInput, userId: string): Promis
             await t.set(postRef, {
                 id: postId,
                 title: postDetails.title,
-                caption: postDetails.caption ? postDetails.caption : null,
+                caption: postDetails.caption ?? null,
                 latitude: postDetails.latitude,
                 longitude: postDetails.longitude,
-                likedBy: [ userId ],
+                likedBy: [userId],
                 createdBy: userId,
                 createdDate: Date.now(),
                 lastUpdatedDate: Date.now()
@@ -64,24 +65,25 @@ export async function createPost(postDetails: PostInput, userId: string): Promis
 }
 
 // upload associated image
-export async function uploadPostImage(postId: string, imageData: Buffer, userId: string, imageType: ImageType): Promise<any> {
-    const postRef = db.collection('posts').doc(postId);
-    const bucket = storage.bucket('images');
-    const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
-    const file = bucket.file(name);
-    // upload file, then update the url pointing to it
+export async function uploadPostImage(postId: string, imageData: Buffer, imageType: ImageType): Promise<any> {
     try {
-        await file.save(imageData, { public: true});
-        if (imageType === ImageType.Painting){
+        const postRef = db.collection('posts').doc(postId);
+        const bucket = storage.bucket(storageBucket);
+        const name = `${postId}-${imageType}.jpg`;
+        const file = bucket.file(name);
+        const options = { public: true, resumable: false, metadata: { contentType: "image/jpg" } }
+        // upload file, then update the url pointing to it
+        await file.save(imageData, options);
+        if (imageType === ImageType.Painting) {
             await postRef.update({
                 paintingUrl: file.metadata.mediaLink
             });
-        } else if (imageType === ImageType.Photograph){
+        } else if (imageType === ImageType.Photograph) {
             await postRef.update({
                 photographUrl: file.metadata.mediaLink
             });
         }
-    } catch {
+    } catch (err) {
         // do nothing (yet) - log?
     }
     return true;
@@ -131,7 +133,7 @@ export async function getPosts(): Promise<any> {
 // get info about a specific post
 export async function getPostDetails(postId: string): Promise<any> {
     const post = await db.collection('posts').doc(postId).get();
-    if (post && post.data()){
+    if (post && post.data()) {
         return post.data();
     } else {
         return null;

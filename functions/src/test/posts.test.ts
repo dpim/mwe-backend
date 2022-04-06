@@ -25,7 +25,7 @@ const mockImageFixturePath2 = 'src/test/fixtures/emoji2.png';
 before(() => {
     // wrap exactly once
     const wrappedMethod: any = admin.initializeApp;
-    if (wrappedMethod && !wrappedMethod.restore){
+    if (wrappedMethod && !wrappedMethod.restore) {
         sinon.stub(admin, 'initializeApp');
     }
 });
@@ -59,7 +59,7 @@ describe("post creation", async () => {
         assert.equal(result.caption, mockPostData.caption);
         assert.equal(result.latitude, mockPostData.latitude);
         assert.equal(result.longitude, mockPostData.longitude);
-        assert.deepEqual(result.likedBy, [ mockUserId]);
+        assert.deepEqual(result.likedBy, [mockUserId]);
     });
 
     it("should see post in post list", async () => {
@@ -77,7 +77,7 @@ describe("post actions", async () => {
         assert.equal(likeResult, true);
         const fetchedResult = await post.getPostDetails(postId);
         assert.equal(fetchedResult.likedBy.length, 2);
-        assert.deepEqual(fetchedResult.likedBy, [ mockUserId, secondMockUserId]);
+        assert.deepEqual(fetchedResult.likedBy, [mockUserId, secondMockUserId]);
     });
 });
 
@@ -88,8 +88,8 @@ describe("photo upload creation", async () => {
         const photoImage = await fs.promises.readFile(mockImageFixturePath2);
         const paintingImageBuffer = Buffer.from(paintingImage);
         const photoImageBuffer = Buffer.from(photoImage);
-        const paintingResult = await post.uploadPostImage(postId, paintingImageBuffer, mockUserId, post.ImageType.Painting);
-        const photoResult = await post.uploadPostImage(postId, photoImageBuffer, mockUserId, post.ImageType.Photograph);
+        const paintingResult = await post.uploadPostImage(postId, paintingImageBuffer, post.ImageType.Painting);
+        const photoResult = await post.uploadPostImage(postId, photoImageBuffer, post.ImageType.Photograph);
         assert.equal(paintingResult, true);
         assert.equal(photoResult, true);
         const fetchedResult = await post.getPostDetails(postId);

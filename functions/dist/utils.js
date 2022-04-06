@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.startFirebaseApp = exports.sendSms = void 0;
+exports.startFirebaseApp = exports.sendSms = exports.storageBucket = void 0;
 const admin = __importStar(require("firebase-admin"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
@@ -38,7 +38,7 @@ const accountSid = process.env.INT_TWILIO_ACCOUNT_SID;
 const adminNumber = process.env.INT_TWILIO_ADMIN_NUM;
 const apiKey = process.env.INT_FIREBASE_API_KEY;
 const authDomain = process.env.INT_FIREBASE_AUTH_DOMAIN;
-const storageBucket = process.env.INT_FIREBASE_STORAGE_BUCKET;
+exports.storageBucket = process.env.INT_FIREBASE_STORAGE_BUCKET;
 const messageClient = (0, twilio_1.default)(accountSid, authToken);
 let appStarted = false;
 function sendSms(postId) {
@@ -53,7 +53,7 @@ exports.sendSms = sendSms;
 const firebaseConfig = {
     apiKey,
     authDomain,
-    storageBucket
+    storageBucket: exports.storageBucket
 };
 // single instance of initialize app
 function startFirebaseApp() {

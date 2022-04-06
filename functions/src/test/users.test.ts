@@ -23,7 +23,7 @@ const mockPostData: post.PostInput = {
 before(() => {
     // wrap exactly once
     const wrappedMethod: any = admin.initializeApp;
-    if (wrappedMethod && !wrappedMethod.restore){
+    if (wrappedMethod && !wrappedMethod.restore) {
         sinon.stub(admin, 'initializeApp');
     }
 });
@@ -51,7 +51,7 @@ describe("user creation", async () => {
         const postId = await post.createPost(mockPostData, mockUserId);
         const fetchedResult = await user.getUser(mockUserId);
         assert.equal(fetchedResult.userId, mockUserId);
-        assert.deepEqual(fetchedResult.likedPosts, [ postId ]);
-        assert.deepEqual(fetchedResult.createdPosts, [ postId ]);
+        assert.deepEqual(fetchedResult.likedPosts, [postId]);
+        assert.deepEqual(fetchedResult.createdPosts, [postId]);
     });
 });

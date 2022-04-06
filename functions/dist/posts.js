@@ -30,10 +30,11 @@ function createPost(postDetails, userId) {
         const userRef = db.collection('users').doc(userId);
         try {
             yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
+                var _b;
                 yield t.set(postRef, {
                     id: postId,
                     title: postDetails.title,
-                    caption: postDetails.caption ? postDetails.caption : null,
+                    caption: (_b = postDetails.caption) !== null && _b !== void 0 ? _b : null,
                     latitude: postDetails.latitude,
                     longitude: postDetails.longitude,
                     likedBy: [userId],
@@ -56,15 +57,16 @@ function createPost(postDetails, userId) {
 }
 exports.createPost = createPost;
 // upload associated image
-function uploadPostImage(postId, imageData, userId, imageType) {
+function uploadPostImage(postId, imageData, imageType) {
     return __awaiter(this, void 0, void 0, function* () {
-        const postRef = db.collection('posts').doc(postId);
-        const bucket = storage.bucket('images');
-        const name = `${postId}/${imageType.toString().toLowerCase()}.png`;
-        const file = bucket.file(name);
-        // upload file, then update the url pointing to it
         try {
-            yield file.save(imageData, { public: true });
+            const postRef = db.collection('posts').doc(postId);
+            const bucket = storage.bucket(utils_1.storageBucket);
+            const name = `${postId}-${imageType}.jpg`;
+            const file = bucket.file(name);
+            const options = { public: true, resumable: false, metadata: { contentType: "image/jpg" } };
+            // upload file, then update the url pointing to it
+            yield file.save(imageData, options);
             if (imageType === ImageType.Painting) {
                 yield postRef.update({
                     paintingUrl: file.metadata.mediaLink
@@ -76,7 +78,7 @@ function uploadPostImage(postId, imageData, userId, imageType) {
                 });
             }
         }
-        catch (_a) {
+        catch (err) {
             // do nothing (yet) - log?
         }
         return true;
