@@ -118,6 +118,21 @@ export async function likePost(postId: string, userId: string): Promise<boolean>
     return true;
 }
 
+// unlike post
+export async function unlikePost(postId: string, userId: string): Promise<boolean> {
+    const userRef = db.collection('users').doc(userId);
+    const postRef = db.collection('posts').doc(postId);
+    try {
+        await db.runTransaction(async (t) => {
+            t.update(postRef, { likedBy: FieldValue.arrayRemove(userId) });
+            t.update(userRef, { likedPosts: FieldValue.arrayRemove(postId) });
+        });
+    } catch {
+        // do nothing (yet) - log?
+    }
+    return true;
+}
+
 // get all posts
 export async function getPosts(): Promise<any> {
     const posts = await db.collection('posts').get();

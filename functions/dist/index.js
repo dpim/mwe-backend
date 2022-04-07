@@ -107,6 +107,12 @@ app.post('/posts/:id/like', (request, response) => __awaiter(void 0, void 0, voi
     yield (0, posts_1.likePost)(postId, userId);
     return response.sendStatus(201);
 }));
+app.post('/posts/:id/unlike', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const userId = request.body.userId;
+    const postId = request.params.id;
+    yield (0, posts_1.unlikePost)(postId, userId);
+    return response.sendStatus(201);
+}));
 app.post('/posts/:id/report', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.body.userId;
     const postId = request.params.id;

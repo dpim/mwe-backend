@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import express from 'express';
 import cors from 'cors';
 import { createUser, getUser } from './users';
-import { PostInput, getPostDetails, getPosts, likePost, reportPost, createPost, uploadPostImage, ImageType } from './posts';
+import { PostInput, getPostDetails, getPosts, likePost, reportPost, createPost, uploadPostImage, ImageType, unlikePost } from './posts';
 
 const app = express();
 app.use(express.json());
@@ -74,6 +74,13 @@ app.post('/posts/:id/like', async (request: Request<{ id: string }>, response: R
    const userId = request.body.userId;
    const postId = request.params.id;
    await likePost(postId, userId);
+   return response.sendStatus(201);
+});
+
+app.post('/posts/:id/unlike', async (request: Request<{ id: string }>, response: Response) => {
+   const userId = request.body.userId;
+   const postId = request.params.id;
+   await unlikePost(postId, userId);
    return response.sendStatus(201);
 });
 
