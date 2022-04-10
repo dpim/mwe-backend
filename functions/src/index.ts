@@ -94,7 +94,7 @@ app.post('/posts/:id/report', async (request: Request<{ id: string }>, response:
 app.post('/posts/:id/delete', async (request: Request<{ id: string }>, response: Response) => {
    const userId = request.body.userId;
    const postId = request.params.id;
-   await Post.reportPost(postId, userId);
+   await Post.deletePost(postId, userId);
    return response.sendStatus(201);
 });
 

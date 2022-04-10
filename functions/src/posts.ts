@@ -119,8 +119,8 @@ export async function deletePost(postId: string, userId: string): Promise<boolea
                     await t.update(userRef, {
                         likedPosts: FieldValue.arrayRemove(postId),
                         createdPosts: FieldValue.arrayRemove(postId)
-                     });
-                     await t.update(postRef, { active: false });
+                    });
+                    await t.update(postRef, { active: false });
                 }
             }
         });
