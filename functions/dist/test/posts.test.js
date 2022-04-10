@@ -105,6 +105,20 @@ describe("post actions", () => __awaiter(void 0, void 0, void 0, function* () {
         assert.equal(fetchedResult.likedBy.length, 2);
         assert.deepEqual(fetchedResult.likedBy, [mockUserId, secondMockUserId]);
     }));
+    it("should be able to delete own post", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield user.createUser("test@test.com", mockUserId);
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        yield post.deletePost(postId, mockUserId);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.equal(fetchedResult, null);
+    }));
+    it("should not be able to delete other's post", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield user.createUser("test@test.com", mockUserId);
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        yield post.deletePost(postId, secondMockUserId);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.notEqual(fetchedResult, null);
+    }));
 }));
 describe("photo upload creation", () => __awaiter(void 0, void 0, void 0, function* () {
     it("should be able to upload images", () => __awaiter(void 0, void 0, void 0, function* () {

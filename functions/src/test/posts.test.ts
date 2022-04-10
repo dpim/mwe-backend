@@ -79,6 +79,22 @@ describe("post actions", async () => {
         assert.equal(fetchedResult.likedBy.length, 2);
         assert.deepEqual(fetchedResult.likedBy, [mockUserId, secondMockUserId]);
     });
+
+    it("should be able to delete own post", async () => {
+        await user.createUser("test@test.com", mockUserId);
+        const postId = await post.createPost(mockPostData, mockUserId);
+        await post.deletePost(postId, mockUserId)
+        const fetchedResult = await post.getPostDetails(postId);
+        assert.equal(fetchedResult, null);
+    });
+
+    it("should not be able to delete other's post", async () => {
+        await user.createUser("test@test.com", mockUserId);
+        const postId = await post.createPost(mockPostData, mockUserId);
+        await post.deletePost(postId, secondMockUserId)
+        const fetchedResult = await post.getPostDetails(postId);
+        assert.notEqual(fetchedResult, null);
+    });
 });
 
 describe("photo upload creation", async () => {

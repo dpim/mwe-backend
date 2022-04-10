@@ -27,6 +27,7 @@ export type Post = {
     id: string,
     photographUrl?: string,
     paintingUrl?: string,
+    active: boolean
 }
 
 export enum ImageType {
@@ -50,7 +51,8 @@ export async function createPost(postDetails: PostInput, userId: string): Promis
                 likedBy: [userId],
                 createdBy: userId,
                 createdDate: Date.now(),
-                lastUpdatedDate: Date.now()
+                lastUpdatedDate: Date.now(),
+                active: true
             });
             await t.update(userRef, {
                 likedPosts: FieldValue.arrayUnion(postId),
@@ -103,14 +105,39 @@ export async function reportPost(postId: string, userId: string): Promise<boolea
     return true;
 }
 
+// delete a post
+export async function deletePost(postId: string, userId: string): Promise<boolean> {
+    const userRef = db.collection('users').doc(userId);
+    const postRef = db.collection('posts').doc(postId);
+    try {
+        await db.runTransaction(async (t) => {
+            const post = await t.get(postRef);
+            if (post && post.exists){
+                const postData: any = post.data();
+                if (postData.createdBy === userId){
+                    // tombstone the post
+                    await t.update(userRef, {
+                        likedPosts: FieldValue.arrayRemove(postId),
+                        createdPosts: FieldValue.arrayRemove(postId)
+                     });
+                     await t.update(postRef, { active: false });
+                }
+            }
+        });
+    } catch {
+        // do nothing (yet) - log?
+    }
+    return true;
+}
+
 // like post
 export async function likePost(postId: string, userId: string): Promise<boolean> {
     const userRef = db.collection('users').doc(userId);
     const postRef = db.collection('posts').doc(postId);
     try {
         await db.runTransaction(async (t) => {
-            t.update(postRef, { likedBy: FieldValue.arrayUnion(userId) });
-            t.update(userRef, { likedPosts: FieldValue.arrayUnion(postId) });
+            await t.update(postRef, { likedBy: FieldValue.arrayUnion(userId) });
+            await t.update(userRef, { likedPosts: FieldValue.arrayUnion(postId) });
         });
     } catch {
         // do nothing (yet) - log?
@@ -124,8 +151,8 @@ export async function unlikePost(postId: string, userId: string): Promise<boolea
     const postRef = db.collection('posts').doc(postId);
     try {
         await db.runTransaction(async (t) => {
-            t.update(postRef, { likedBy: FieldValue.arrayRemove(userId) });
-            t.update(userRef, { likedPosts: FieldValue.arrayRemove(postId) });
+            await t.update(postRef, { likedBy: FieldValue.arrayRemove(userId) });
+            await t.update(userRef, { likedPosts: FieldValue.arrayRemove(postId) });
         });
     } catch {
         // do nothing (yet) - log?
@@ -139,7 +166,12 @@ export async function getPosts(): Promise<any> {
     const result: any[] = [];
     if (!posts.empty) {
         posts.forEach(post => {
-            result.push(post.data());
+            if (post && post.data()) {
+                const data: any = post.data()
+                if (data.active){
+                    result.push(data);
+                }
+            }
         });
     }
     return result;
@@ -149,7 +181,12 @@ export async function getPosts(): Promise<any> {
 export async function getPostDetails(postId: string): Promise<any> {
     const post = await db.collection('posts').doc(postId).get();
     if (post && post.data()) {
-        return post.data();
+        const data: any = post.data()
+        if (data.active){
+            return data;
+        } else {
+            return null;
+        }
     } else {
         return null;
     }

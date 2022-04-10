@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPostDetails = exports.getPosts = exports.unlikePost = exports.likePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
+exports.getPostDetails = exports.getPosts = exports.unlikePost = exports.likePost = exports.deletePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
 const firestore_1 = require("firebase-admin/firestore");
 const storage_1 = require("firebase-admin/storage");
 const uuid_1 = require("uuid");
@@ -40,7 +40,8 @@ function createPost(postDetails, userId) {
                     likedBy: [userId],
                     createdBy: userId,
                     createdDate: Date.now(),
-                    lastUpdatedDate: Date.now()
+                    lastUpdatedDate: Date.now(),
+                    active: true
                 });
                 yield t.update(userRef, {
                     likedPosts: firestore_1.FieldValue.arrayUnion(postId),
@@ -102,6 +103,34 @@ function reportPost(postId, userId) {
     });
 }
 exports.reportPost = reportPost;
+// delete a post
+function deletePost(postId, userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const userRef = db.collection('users').doc(userId);
+        const postRef = db.collection('posts').doc(postId);
+        try {
+            yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
+                const post = yield t.get(postRef);
+                if (post && post.exists) {
+                    const postData = post.data();
+                    if (postData.createdBy === userId) {
+                        // tombstone the post
+                        yield t.update(userRef, {
+                            likedPosts: firestore_1.FieldValue.arrayRemove(postId),
+                            createdPosts: firestore_1.FieldValue.arrayRemove(postId)
+                        });
+                        yield t.update(postRef, { active: false });
+                    }
+                }
+            }));
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
+        return true;
+    });
+}
+exports.deletePost = deletePost;
 // like post
 function likePost(postId, userId) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -109,8 +138,8 @@ function likePost(postId, userId) {
         const postRef = db.collection('posts').doc(postId);
         try {
             yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
-                t.update(postRef, { likedBy: firestore_1.FieldValue.arrayUnion(userId) });
-                t.update(userRef, { likedPosts: firestore_1.FieldValue.arrayUnion(postId) });
+                yield t.update(postRef, { likedBy: firestore_1.FieldValue.arrayUnion(userId) });
+                yield t.update(userRef, { likedPosts: firestore_1.FieldValue.arrayUnion(postId) });
             }));
         }
         catch (_a) {
@@ -127,8 +156,8 @@ function unlikePost(postId, userId) {
         const postRef = db.collection('posts').doc(postId);
         try {
             yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
-                t.update(postRef, { likedBy: firestore_1.FieldValue.arrayRemove(userId) });
-                t.update(userRef, { likedPosts: firestore_1.FieldValue.arrayRemove(postId) });
+                yield t.update(postRef, { likedBy: firestore_1.FieldValue.arrayRemove(userId) });
+                yield t.update(userRef, { likedPosts: firestore_1.FieldValue.arrayRemove(postId) });
             }));
         }
         catch (_a) {
@@ -145,7 +174,12 @@ function getPosts() {
         const result = [];
         if (!posts.empty) {
             posts.forEach(post => {
-                result.push(post.data());
+                if (post && post.data()) {
+                    const data = post.data();
+                    if (data.active) {
+                        result.push(data);
+                    }
+                }
             });
         }
         return result;
@@ -157,7 +191,13 @@ function getPostDetails(postId) {
     return __awaiter(this, void 0, void 0, function* () {
         const post = yield db.collection('posts').doc(postId).get();
         if (post && post.data()) {
-            return post.data();
+            const data = post.data();
+            if (data.active) {
+                return data;
+            }
+            else {
+                return null;
+            }
         }
         else {
             return null;
