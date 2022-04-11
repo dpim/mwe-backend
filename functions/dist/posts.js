@@ -31,6 +31,8 @@ function createPost(postDetails, userId) {
         try {
             yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
                 var _b;
+                const user = yield t.get(userRef);
+                const userData = user.data();
                 yield t.set(postRef, {
                     id: postId,
                     title: postDetails.title,
@@ -39,6 +41,7 @@ function createPost(postDetails, userId) {
                     longitude: postDetails.longitude,
                     likedBy: [userId],
                     createdBy: userId,
+                    createdByDisplayName: userData.displayName,
                     createdDate: Date.now(),
                     lastUpdatedDate: Date.now(),
                     active: true

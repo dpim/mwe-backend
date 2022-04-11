@@ -22,6 +22,7 @@ export type Post = {
     longitude: number,
     likedBy: [string],
     createdBy: string,
+    createdByDisplayName: string,
     createdDate: Date,
     lastUpdatedDate: Date,
     id: string,
@@ -42,6 +43,8 @@ export async function createPost(postDetails: PostInput, userId: string): Promis
     const userRef = db.collection('users').doc(userId);
     try {
         await db.runTransaction(async (t) => {
+            const user = await t.get(userRef);
+            const userData: any = user.data();
             await t.set(postRef, {
                 id: postId,
                 title: postDetails.title,
@@ -50,6 +53,7 @@ export async function createPost(postDetails: PostInput, userId: string): Promis
                 longitude: postDetails.longitude,
                 likedBy: [userId],
                 createdBy: userId,
+                createdByDisplayName: userData.displayName,
                 createdDate: Date.now(),
                 lastUpdatedDate: Date.now(),
                 active: true

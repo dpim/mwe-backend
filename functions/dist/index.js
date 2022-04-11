@@ -122,7 +122,7 @@ app.post('/posts/:id/report', (request, response) => __awaiter(void 0, void 0, v
 app.post('/posts/:id/delete', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = request.body.userId;
     const postId = request.params.id;
-    yield Post.reportPost(postId, userId);
+    yield Post.deletePost(postId, userId);
     return response.sendStatus(201);
 }));
 exports.api = functions.https.onRequest(app);
