@@ -6,12 +6,13 @@ import client from 'twilio';
 // find .env file in parent dictory
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-const authToken = process.env.INT_TWILIO_AUTH_TOKEN;
-const accountSid = process.env.INT_TWILIO_ACCOUNT_SID;
-const adminNumber = process.env.INT_TWILIO_ADMIN_NUM;
-const apiKey = process.env.INT_FIREBASE_API_KEY;
-const authDomain = process.env.INT_FIREBASE_AUTH_DOMAIN;
-export const storageBucket = process.env.INT_FIREBASE_STORAGE_BUCKET;
+const authToken: string = process.env.INT_TWILIO_AUTH_TOKEN!;
+const accountSid: string = process.env.INT_TWILIO_ACCOUNT_SID!;
+const adminNumber: string = process.env.INT_TWILIO_ADMIN_NUM!;
+const apiKey: string = process.env.INT_FIREBASE_API_KEY!;
+const authDomain: string = process.env.INT_FIREBASE_AUTH_DOMAIN!;
+export const storageBucket: string = process.env.INT_FIREBASE_STORAGE_BUCKET!;
+export const privateKey: string = process.env.AUTH_TOKEN_KEY!;
 
 const messageClient = client(accountSid, authToken);
 let appStarted = false;

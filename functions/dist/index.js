@@ -38,20 +38,39 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = __importStar(require("firebase-functions"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const passport_1 = __importDefault(require("passport"));
 const User = __importStar(require("./users"));
 const Post = __importStar(require("./posts"));
+const Auth = __importStar(require("./auth"));
+passport_1.default.use(Auth.jwtStrategy);
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({ origin: true }));
 app.use(express_1.default.urlencoded({ extended: true }));
+app.use(passport_1.default.initialize());
+// get JWT from id token
+app.post('/token', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const token = yield Auth.createToken(request.params.id);
+    return response.send(token);
+}));
+// get JWT from id token
+app.post('/token/renew', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const token = yield Auth.renewToken(request.params.token);
+    if (token) {
+        return response.send(token);
+    }
+    return response.sendStatus(400);
+}));
 // account routes
 app.get('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.params.id;
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const user = yield User.getUser(userId);
     return response.send(user);
 }));
-app.post('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.params.id;
+app.post('/users/:id', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const userDisplayName = request.body.displayName;
     if (!userDisplayName) {
         return response.sendStatus(400);
@@ -68,10 +87,11 @@ app.get('/posts/:id', (request, response) => __awaiter(void 0, void 0, void 0, f
     const post = yield Post.getPostDetails(request.params.id);
     return response.send(post);
 }));
-app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/posts', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const body = request.body;
-    const userId = body.userId;
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const postDetails = {
         title: body.title,
         caption: (_a = body.caption) !== null && _a !== void 0 ? _a : null,
@@ -81,7 +101,7 @@ app.post('/posts', (request, response) => __awaiter(void 0, void 0, void 0, func
     const postId = yield Post.createPost(postDetails, userId);
     return response.send({ postId });
 }));
-app.post('/posts/:id/upload/:type', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/posts/:id/upload/:type', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const postId = request.params.id;
     const typeString = request.params.type;
     const type = (typeString === "picture") ? Post.ImageType.Painting : Post.ImageType.Photograph;
@@ -101,26 +121,30 @@ app.post('/posts/:id/upload/:type', (request, response) => __awaiter(void 0, voi
         return response.sendStatus(500);
     }
 }));
-app.post('/posts/:id/like', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.body.userId;
+app.post('/posts/:id/like', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const postId = request.params.id;
     yield Post.likePost(postId, userId);
     return response.sendStatus(201);
 }));
-app.post('/posts/:id/unlike', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.body.userId;
+app.post('/posts/:id/unlike', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const postId = request.params.id;
     yield Post.unlikePost(postId, userId);
     return response.sendStatus(201);
 }));
 app.post('/posts/:id/report', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.body.userId;
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const postId = request.params.id;
     yield Post.reportPost(postId, userId);
     return response.sendStatus(201);
 }));
-app.post('/posts/:id/delete', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const userId = request.body.userId;
+app.post('/posts/:id/delete', passport_1.default.authenticate('jwt', { session: false }), (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestUser = request.user;
+    const userId = requestUser.id;
     const postId = request.params.id;
     yield Post.deletePost(postId, userId);
     return response.sendStatus(201);
