@@ -21,19 +21,23 @@ export async function createToken(userId: string): Promise<any> {
 
 // renew token
 export async function renewToken(oldToken: string): Promise<any> {
-    const decoded: any = jwt.verify(oldToken, privateKey);
-    const userId = decoded.userId;
-    const newToken = jwt.sign({ userId }, privateKey, { algorithm: 'RS256' });
-    const tokenRef = db.collection('tokens').doc(userId);
-    const tokenEntry = await tokenRef.get();
+    try {
+        const decoded: any = jwt.verify(oldToken, privateKey);
+        const userId = decoded.userId;
+        const newToken = jwt.sign({ userId }, privateKey);
+        const tokenRef = db.collection('tokens').doc(userId);
+        const tokenEntry = await tokenRef.get();
 
-    // if this token is "renewable", hasn't already been renewed
-    if (tokenEntry && tokenEntry.data()) {
-        const tokenData: any = tokenEntry.data();
-        if (tokenData.token === oldToken){
-            await tokenRef.update({ userId, token: newToken, lastUpdatedDate: Date.now() });
-            return newToken;
+        // if this token is "renewable", hasn't already been renewed
+        if (tokenEntry && tokenEntry.data()) {
+            const tokenData: any = tokenEntry.data();
+            if (tokenData.token === oldToken){
+                await tokenRef.update({ userId, token: newToken, lastUpdatedDate: Date.now() });
+                return newToken;
+            }
         }
+    } catch {
+        // do nothing yet
     }
     return null;
 }

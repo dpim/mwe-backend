@@ -57,18 +57,23 @@ exports.createToken = createToken;
 // renew token
 function renewToken(oldToken) {
     return __awaiter(this, void 0, void 0, function* () {
-        const decoded = jwt.verify(oldToken, utils_1.privateKey);
-        const userId = decoded.userId;
-        const newToken = jwt.sign({ userId }, utils_1.privateKey, { algorithm: 'RS256' });
-        const tokenRef = db.collection('tokens').doc(userId);
-        const tokenEntry = yield tokenRef.get();
-        // if this token is "renewable", hasn't already been renewed
-        if (tokenEntry && tokenEntry.data()) {
-            const tokenData = tokenEntry.data();
-            if (tokenData.token === oldToken) {
-                yield tokenRef.update({ userId, token: newToken, lastUpdatedDate: Date.now() });
-                return newToken;
+        try {
+            const decoded = jwt.verify(oldToken, utils_1.privateKey);
+            const userId = decoded.userId;
+            const newToken = jwt.sign({ userId }, utils_1.privateKey);
+            const tokenRef = db.collection('tokens').doc(userId);
+            const tokenEntry = yield tokenRef.get();
+            // if this token is "renewable", hasn't already been renewed
+            if (tokenEntry && tokenEntry.data()) {
+                const tokenData = tokenEntry.data();
+                if (tokenData.token === oldToken) {
+                    yield tokenRef.update({ userId, token: newToken, lastUpdatedDate: Date.now() });
+                    return newToken;
+                }
             }
+        }
+        catch (_a) {
+            // do nothing yet
         }
         return null;
     });
