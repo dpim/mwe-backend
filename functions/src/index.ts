@@ -18,14 +18,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 
 // get JWT from id token
-app.post('/token', async (request: Request<{ id: string }>, response: Response) => {
-   const token = await Auth.createToken(request.params.id);
+app.post('/token', async (request: Request, response: Response) => {
+   const userId = request.body.userId;
+   const token = await Auth.createToken(userId);
    return response.send({ token });
 });
 
 // get JWT from id token
-app.post('/token/renew', async (request: Request<{ token: string }>, response: Response) => {
-   const token = await Auth.renewToken(request.params.token);
+app.post('/token/renew', async (request: Request, response: Response) => {
+   const oldToken = request.body.token;
+   const token = await Auth.renewToken(oldToken);
    if (token) {
       return response.send({ token });
    }
@@ -34,20 +36,16 @@ app.post('/token/renew', async (request: Request<{ token: string }>, response: R
 
 // account routes
 app.get('/users/:id', async (request: Request<{ id: string }>, response: Response) => {
-   const requestUser: any = request.user;
-   const userId = requestUser.id;
-   const user = await User.getUser(userId);
+   const user = await User.getUser(request.params.id);
    return response.send(user);
 });
 
 app.post('/users/:id', async (request: Request<{ id: string }>, response: Response) => {
-   const requestUser: any = request.user;
-   const userId = requestUser.id;
    const userDisplayName = request.body.displayName;
    if (!userDisplayName) {
       return response.sendStatus(400);
    }
-   const user = await User.createUser(userDisplayName, userId);
+   const user = await User.createUser(userDisplayName, request.params.id);
    return response.send(user);
 });
 

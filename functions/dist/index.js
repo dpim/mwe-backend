@@ -51,12 +51,14 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use(passport_1.default.initialize());
 // get JWT from id token
 app.post('/token', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = yield Auth.createToken(request.params.id);
+    const userId = request.body.userId;
+    const token = yield Auth.createToken(userId);
     return response.send({ token });
 }));
 // get JWT from id token
 app.post('/token/renew', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const token = yield Auth.renewToken(request.params.token);
+    const oldToken = request.body.token;
+    const token = yield Auth.renewToken(oldToken);
     if (token) {
         return response.send({ token });
     }
@@ -64,19 +66,15 @@ app.post('/token/renew', (request, response) => __awaiter(void 0, void 0, void 0
 }));
 // account routes
 app.get('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const requestUser = request.user;
-    const userId = requestUser.id;
-    const user = yield User.getUser(userId);
+    const user = yield User.getUser(request.params.id);
     return response.send(user);
 }));
 app.post('/users/:id', (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-    const requestUser = request.user;
-    const userId = requestUser.id;
     const userDisplayName = request.body.displayName;
     if (!userDisplayName) {
         return response.sendStatus(400);
     }
-    const user = yield User.createUser(userDisplayName, userId);
+    const user = yield User.createUser(userDisplayName, request.params.id);
     return response.send(user);
 }));
 // post routes

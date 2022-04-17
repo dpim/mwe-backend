@@ -8,7 +8,7 @@ const db = getFirestore();
 
 // generate new token
 export async function createToken(userId: string): Promise<any> {
-    const token = jwt.sign({ userId }, privateKey, { algorithm: 'RS256' });
+    const token = jwt.sign({ userId }, privateKey);
     const tokenRef = db.collection('tokens').doc(userId);
     await tokenRef.set({
         userId,

@@ -42,7 +42,7 @@ const db = (0, firestore_1.getFirestore)();
 // generate new token
 function createToken(userId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const token = jwt.sign({ userId }, utils_1.privateKey, { algorithm: 'RS256' });
+        const token = jwt.sign({ userId }, utils_1.privateKey);
         const tokenRef = db.collection('tokens').doc(userId);
         yield tokenRef.set({
             userId,
