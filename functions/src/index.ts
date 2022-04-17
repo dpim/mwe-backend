@@ -20,14 +20,14 @@ app.use(passport.initialize());
 // get JWT from id token
 app.post('/token', async (request: Request<{ id: string }>, response: Response) => {
    const token = await Auth.createToken(request.params.id);
-   return response.send(token);
+   return response.send({ token });
 });
 
 // get JWT from id token
 app.post('/token/renew', async (request: Request<{ token: string }>, response: Response) => {
    const token = await Auth.renewToken(request.params.token);
    if (token) {
-      return response.send(token);
+      return response.send({ token });
    }
    return response.sendStatus(400);
 });
@@ -40,7 +40,7 @@ app.get('/users/:id', async (request: Request<{ id: string }>, response: Respons
    return response.send(user);
 });
 
-app.post('/users/:id', jwtMiddleware, async (request: Request<{ id: string }>, response: Response) => {
+app.post('/users/:id', async (request: Request<{ id: string }>, response: Response) => {
    const requestUser: any = request.user;
    const userId = requestUser.id;
    const userDisplayName = request.body.displayName;
@@ -76,7 +76,7 @@ app.post('/posts', jwtMiddleware, async (request: Request, response: Response) =
    return response.send({ postId });
 });
 
-app.post('/posts/:id/upload/:type', jwtMiddleware, async (request: Request<{ id: string, type: string }>, response: Response) => {
+app.post('/posts/:id/upload/:type', async (request: Request<{ id: string, type: string }>, response: Response) => {
    const postId = request.params.id;
    const typeString = request.params.type;
    const type = (typeString === "picture") ? Post.ImageType.Painting : Post.ImageType.Photograph;
