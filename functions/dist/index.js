@@ -120,6 +120,15 @@ app.post('/posts/:id/upload/:type', (request, response) => __awaiter(void 0, voi
         return response.sendStatus(500);
     }
 }));
+app.post('/posts/:id/location', jwtMiddleware, (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestUser = request.user;
+    const userId = requestUser.id;
+    const postId = request.params.id;
+    const latitude = request.body.latitude;
+    const longitude = request.body.longitude;
+    yield Post.updateLocation(postId, userId, latitude, longitude);
+    return response.sendStatus(201);
+}));
 app.post('/posts/:id/like', jwtMiddleware, (request, response) => __awaiter(void 0, void 0, void 0, function* () {
     const requestUser = request.user;
     const userId = requestUser.id;

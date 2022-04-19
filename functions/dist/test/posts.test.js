@@ -119,6 +119,22 @@ describe("post actions", () => __awaiter(void 0, void 0, void 0, function* () {
         const fetchedResult = yield post.getPostDetails(postId);
         assert.notEqual(fetchedResult, null);
     }));
+    it("should be able to update coordinates of own post", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield user.createUser("test@test.com", mockUserId);
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        yield post.updateLocation(postId, mockUserId, 12.3, -45.6);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.equal(fetchedResult.latitude, 12.3);
+        assert.equal(fetchedResult.longitude, -45.6);
+    }));
+    it("should not be able to update coordinates of other user's posts", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield user.createUser("test@test.com", mockUserId);
+        const postId = yield post.createPost(mockPostData, mockUserId);
+        yield post.updateLocation(postId, secondMockUserId, 12.3, -45.6);
+        const fetchedResult = yield post.getPostDetails(postId);
+        assert.notEqual(fetchedResult.latitude, 12.3);
+        assert.notEqual(fetchedResult.longitude, -45.6);
+    }));
 }));
 describe("photo upload creation", () => __awaiter(void 0, void 0, void 0, function* () {
     it("should be able to upload images", () => __awaiter(void 0, void 0, void 0, function* () {

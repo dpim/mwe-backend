@@ -95,6 +95,24 @@ describe("post actions", async () => {
         const fetchedResult = await post.getPostDetails(postId);
         assert.notEqual(fetchedResult, null);
     });
+
+    it("should be able to update coordinates of own post", async () => {
+        await user.createUser("test@test.com", mockUserId);
+        const postId = await post.createPost(mockPostData, mockUserId);
+        await post.updateLocation(postId, mockUserId, 12.3, -45.6);
+        const fetchedResult = await post.getPostDetails(postId);
+        assert.equal(fetchedResult.latitude, 12.3);
+        assert.equal(fetchedResult.longitude, -45.6);
+    });
+
+    it("should not be able to update coordinates of other user's posts", async () => {
+        await user.createUser("test@test.com", mockUserId);
+        const postId = await post.createPost(mockPostData, mockUserId);
+        await post.updateLocation(postId, secondMockUserId, 12.3, -45.6);
+        const fetchedResult = await post.getPostDetails(postId);
+        assert.notEqual(fetchedResult.latitude, 12.3);
+        assert.notEqual(fetchedResult.longitude, -45.6);
+    });
 });
 
 describe("photo upload creation", async () => {

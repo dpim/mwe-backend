@@ -115,9 +115,9 @@ export async function deletePost(postId: string, userId: string): Promise<boolea
     try {
         await db.runTransaction(async (t) => {
             const post = await t.get(postRef);
-            if (post && post.exists){
+            if (post && post.exists) {
                 const postData: any = post.data();
-                if (postData.createdBy === userId){
+                if (postData.createdBy === userId) {
                     // tombstone the post
                     await t.update(userRef, {
                         likedPosts: FieldValue.arrayRemove(postId),
@@ -163,6 +163,24 @@ export async function unlikePost(postId: string, userId: string): Promise<boolea
     return true;
 }
 
+// update post location
+export async function updateLocation(postId: string, userId: string, latitude: number, longitude: number) {
+    const postRef = db.collection('posts').doc(postId);
+    try {
+        await db.runTransaction(async (t) => {
+            const post = await t.get(postRef);
+            if (post && post.exists) {
+                const postData: any = post.data();
+                if (postData.createdBy === userId) {
+                    await t.update(postRef, { latitude, longitude });
+                }
+            }
+        });
+    } catch {
+        // do nothing (yet) - log?
+    }
+}
+
 // get all posts
 export async function getPosts(): Promise<any> {
     const posts = await db.collection('posts').get();
@@ -171,7 +189,7 @@ export async function getPosts(): Promise<any> {
         posts.forEach(post => {
             if (post && post.data()) {
                 const data: any = post.data()
-                if (data.active){
+                if (data.active) {
                     result.push(data);
                 }
             }
@@ -185,7 +203,7 @@ export async function getPostDetails(postId: string): Promise<any> {
     const post = await db.collection('posts').doc(postId).get();
     if (post && post.data()) {
         const data: any = post.data()
-        if (data.active){
+        if (data.active) {
             return data;
         } else {
             return null;

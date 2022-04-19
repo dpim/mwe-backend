@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPostDetails = exports.getPosts = exports.unlikePost = exports.likePost = exports.deletePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
+exports.getPostDetails = exports.getPosts = exports.updateLocation = exports.unlikePost = exports.likePost = exports.deletePost = exports.reportPost = exports.uploadPostImage = exports.createPost = exports.ImageType = void 0;
 const firestore_1 = require("firebase-admin/firestore");
 const storage_1 = require("firebase-admin/storage");
 const uuid_1 = require("uuid");
@@ -170,6 +170,27 @@ function unlikePost(postId, userId) {
     });
 }
 exports.unlikePost = unlikePost;
+// update post location
+function updateLocation(postId, userId, latitude, longitude) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const postRef = db.collection('posts').doc(postId);
+        try {
+            yield db.runTransaction((t) => __awaiter(this, void 0, void 0, function* () {
+                const post = yield t.get(postRef);
+                if (post && post.exists) {
+                    const postData = post.data();
+                    if (postData.createdBy === userId) {
+                        yield t.update(postRef, { latitude, longitude });
+                    }
+                }
+            }));
+        }
+        catch (_a) {
+            // do nothing (yet) - log?
+        }
+    });
+}
+exports.updateLocation = updateLocation;
 // get all posts
 function getPosts() {
     return __awaiter(this, void 0, void 0, function* () {

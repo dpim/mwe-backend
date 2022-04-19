@@ -93,6 +93,16 @@ app.post('/posts/:id/upload/:type', async (request: Request<{ id: string, type: 
    }
 });
 
+app.post('/posts/:id/location', jwtMiddleware, async (request: Request<{ id: string }>, response: Response) => {
+   const requestUser: any = request.user;
+   const userId = requestUser.id;
+   const postId = request.params.id;
+   const latitude = request.body.latitude;
+   const longitude = request.body.longitude;
+   await Post.updateLocation(postId, userId, latitude, longitude);
+   return response.sendStatus(201);
+});
+
 app.post('/posts/:id/like', jwtMiddleware, async (request: Request<{ id: string }>, response: Response) => {
    const requestUser: any = request.user;
    const userId = requestUser.id;
